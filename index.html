@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenAI 量表分類測試</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --primary-glow: #38bdf8;
+            --secondary-glow: #818cf8;
+            --text-color: #f1f5f9;
+            --success-color: #22c55e;
+            --warning-color: #f43f5e;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 20%);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+            margin: 0;
+        }
+
+        .instruction {
+            margin-top: 10px;
+            color: #94a3b8;
+            font-size: 1rem;
+            max-width: 700px;
+            line-height: 1.5;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+            width: 100%;
+            max-width: 1300px;
+        }
+
+        /* 左側：卡片源區域 */
+        #card-source {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px;
+            height: 75vh;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 20px;
+        }
+
+        .source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #card-count {
+            background: var(--warning-color);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        #card-pile {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 5px;
+        }
+
+        /* 滾動條樣式 */
+        #card-pile::-webkit-scrollbar { width: 5px; }
+        #card-pile::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        /* 卡片樣式 */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 14px;
+            border-radius: 10px;
+            cursor: grab;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .card:hover {
+            border-color: var(--primary-glow);
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .card.dragging {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        /* 右側：分類目標 */
+        .drop-zones {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .zone {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 120px;
+            transition: all 0.3s;
+        }
+
+        .zone h3 {
+            margin: 0 0 15px 0;
+            color: var(--primary-glow);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zone.drag-over {
+            background: rgba(56, 189, 248, 0.05);
+            border-color: var(--primary-glow);
+            border-style: solid;
+        }
+
+        .zone-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            min-height: 50px;
+        }
+
+        .zone-content .card {
+            font-size: 0.85rem;
+            background: rgba(56, 189, 248, 0.1);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        /* 操作區 */
+        .actions {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 50px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        #submit-btn {
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            color: #0f172a;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #submit-btn:disabled {
+            background: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none;
+        }
+
+        #submit-btn:not(:disabled):hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px var(--primary-glow);
+        }
+
+        .status-msg {
+            font-size: 0.9rem;
+            color: var(--warning-color);
+        }
+
+        /* 結果彈窗 */
+        #result-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            border: 1px solid var(--primary-glow);
+        }
+
+        pre {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 10px;
+            color: var(--primary-glow);
+            font-size: 0.85rem;
+            overflow-x: auto;
+            max-height: 300px;
+        }
+
+        .close-btn {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            margin-top: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>GenAI 量表分類測試</h1>
+        <p class="instruction">
+            請將左側<b>所有的卡片</b>拖入右側三個分類之一。
+            <br>為了確保研究準確性，請依據您的第一直覺歸類。
+        </p>
+    </header>
+
+    <div class="container">
+        <!-- 待分類區域 -->
+        <div id="card-source">
+            <div class="source-header">
+                <h3>待分類題項</h3>
+                <span id="card-count">14 張待處理</span>
+            </div>
+            <div id="card-pile"></div>
+        </div>
+
+        <!-- 目標區域 -->
+        <div class="drop-zones">
+            <div class="zone" data-category="依賴傾向 (Dependence)">
+                <h3>📦 依賴傾向 (Dependence)</h3>
+                <div class="zone-content"></div>
+            </div>
+            <div class="zone" data-category="功能性依附 (Functional)">
+                <h3>🛠️ 功能性依附 (Functional)</h3>
+                <div class="zone-content"></div>
+            </div>
+            <div class="zone" data-category="情感性依附 (Emotional)">
+                <h3>❤️ 情感性依附 (Emotional)</h3>
+                <div class="zone-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <div id="status-text" class="status-msg">請完成所有卡片的分類以提交結果</div>
+        <button id="submit-btn" class="btn" disabled>完成分類並導出數據</button>
+    </div>
+
+    <!-- 結果顯示 -->
+    <div id="result-overlay">
+        <div class="modal">
+            <h2 style="color: var(--success-color)">分類已完成！</h2>
+            <p>請複製下方 JSON 數據進行保存與分析：</p>
+            <pre id="json-output"></pre>
+            <button class="close-btn" onclick="document.getElementById('result-overlay').style.display='none'">返回修改</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { id: "Q01", text: "在開始工作或任務前，我必須先啟動 GenAI" },
+            { id: "Q02", text: "GenAI 產出的內容是有幫助的" },
+            { id: "Q03", text: "我感到與 GenAI 有情感上的連結" },
+            { id: "Q04", text: "如果無法使用 GenAI，我會感到難以獲取所需訊息" },
+            { id: "Q05", text: "相對於其他人或物，我更願意將時間花在 GenAI 上" },
+            { id: "Q06", text: "GenAI 提供了支持使我完成目標" },
+            { id: "Q07", text: "即使面對那些自己能輕鬆完成的工作或任務，我也傾向於讓 GenAI 幫忙" },
+            { id: "Q08", text: "我情感上受到 GenAI 吸引" },
+            { id: "Q09", text: "即使不使用 GenAI，我也要保持登入或啟動狀態" },
+            { id: "Q10", text: "GenAI 提供了資源使我完成目標" },
+            { id: "Q11", text: "如果無法使用 GenAI，我會感到焦慮或不適" },
+            { id: "Q12", text: "GenAI 對我來說在情感上很特別" },
+            { id: "Q13", text: "對我而言，沒有 GenAI 的生活是不便的" },
+            { id: "Q14", text: "我花費在 GenAI 上的時間越來越多了" }
+        ];
+
+        let draggedElement = null;
+
+        // 初始化
+        function init() {
+            const pile = document.getElementById('card-pile');
+            // 隨機洗牌
+            [...questions].sort(() => Math.random() - 0.5).forEach(q => {
+                const el = document.createElement('div');
+                el.className = 'card';
+                el.draggable = true;
+                el.id = q.id;
+                el.innerText = q.text;
+                el.addEventListener('dragstart', e => {
+                    draggedElement = el;
+                    el.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', el.id);
+                });
+                el.addEventListener('dragend', () => el.classList.remove('dragging'));
+                pile.appendChild(el);
+            });
+            updateState();
+        }
+
+        // 監聽拖放
+        document.querySelectorAll('.zone, #card-source').forEach(target => {
+            target.addEventListener('dragover', e => e.preventDefault());
+            target.addEventListener('dragenter', () => target.classList.add('drag-over'));
+            target.addEventListener('dragleave', () => target.classList.remove('drag-over'));
+            
+            target.addEventListener('drop', e => {
+                e.preventDefault();
+                target.classList.remove('drag-over');
+                const container = target.classList.contains('zone') 
+                    ? target.querySelector('.zone-content') 
+                    : document.getElementById('card-pile');
+                
+                if (draggedElement) {
+                    container.appendChild(draggedElement);
+                    updateState();
+                }
+            });
+        });
+
+        // 更新狀態與按鈕
+        function updateState() {
+            const remaining = document.getElementById('card-pile').children.length;
+            const counter = document.getElementById('card-count');
+            const submitBtn = document.getElementById('submit-btn');
+            const statusText = document.getElementById('status-text');
+
+            counter.innerText = remaining > 0 ? `${remaining} 張待處理` : "已全部歸類";
+            counter.style.background = remaining > 0 ? "var(--warning-color)" : "var(--success-color)";
+
+            if (remaining === 0) {
+                submitBtn.disabled = false;
+                statusText.innerText = "驗證完畢，可以提交結果";
+                statusText.style.color = "var(--success-color)";
+            } else {
+                submitBtn.disabled = true;
+                statusText.innerText = `尚有 ${remaining} 張卡片未分類`;
+                statusText.style.color = "var(--warning-color)";
+            }
+        }
+
+        // 提交
+        document.getElementById('submit-btn').addEventListener('click', () => {
+            const result = {
+                metadata: {
+                    test_time: new Date().toLocaleString(),
+                    total_cards: questions.length
+                },
+                sorting: {}
+            };
+
+            document.querySelectorAll('.zone').forEach(zone => {
+                const cat = zone.getAttribute('data-category');
+                const cards = Array.from(zone.querySelectorAll('.card')).map(c => ({
+                    id: c.id,
+                    text: c.innerText
+                }));
+                result.sorting[cat] = cards;
+            });
+
+            document.getElementById('json-output').innerText = JSON.stringify(result, null, 2);
+            document.getElementById('result-overlay').style.display = 'flex';
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
