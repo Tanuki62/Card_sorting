@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenAI 量表分類測試</title>
+    <title>生成式AI 量表分類測試</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -28,6 +28,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 30px 20px;
+            box-sizing: border-box; /* Ensure padding doesn't affect width */
         }
 
         header {
@@ -55,6 +56,19 @@
             gap: 25px;
             width: 100%;
             max-width: 1300px;
+        }
+
+        /* Responsive adjustment for smaller screens */
+        @media (max-width: 850px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+            #card-source {
+                height: 300px !important;
+                position: relative !important;
+                top: 0 !important;
+            }
         }
 
         /* 左側：卡片源區域 */
@@ -125,6 +139,7 @@
         .card.dragging {
             opacity: 0.3;
             transform: scale(0.95);
+            cursor: grabbing;
         }
 
         /* 右側：分類目標 */
@@ -169,6 +184,11 @@
             font-size: 0.85rem;
             background: rgba(56, 189, 248, 0.1);
             border-color: rgba(56, 189, 248, 0.3);
+            transform: none; /* Reset hover transform in grid */
+        }
+        
+        .zone-content .card:hover {
+             transform: translateY(-2px);
         }
 
         /* 操作區 */
@@ -224,6 +244,7 @@
             align-items: center;
             z-index: 1000;
             padding: 20px;
+            backdrop-filter: blur(5px);
         }
 
         .modal {
@@ -233,6 +254,7 @@
             max-width: 600px;
             width: 100%;
             border: 1px solid var(--primary-glow);
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.2);
         }
 
         pre {
@@ -243,6 +265,11 @@
             font-size: 0.85rem;
             overflow-x: auto;
             max-height: 300px;
+            white-space: pre-wrap;       /* css-3 */
+            white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+            white-space: -pre-wrap;      /* Opera 4-6 */
+            white-space: -o-pre-wrap;    /* Opera 7 */
+            word-wrap: break-word;       /* Internet Explorer 5.5+ */
         }
 
         .close-btn {
@@ -254,13 +281,18 @@
             margin-top: 15px;
             border-radius: 8px;
             cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>GenAI 量表分類測試</h1>
+        <h1>生成式AI 量表分類測試</h1>
         <p class="instruction">
             請將左側<b>所有的卡片</b>拖入右側三個分類之一。
             <br>為了確保研究準確性，請依據您的第一直覺歸類。
@@ -279,16 +311,16 @@
 
         <!-- 目標區域 -->
         <div class="drop-zones">
-            <div class="zone" data-category="依賴傾向 (Dependence)">
-                <h3>📦 依賴傾向 (Dependence)</h3>
+            <div class="zone" data-category="生成式AI依賴 (Dependence)">
+                <h3>依賴</h3>
                 <div class="zone-content"></div>
             </div>
-            <div class="zone" data-category="功能性依附 (Functional)">
-                <h3>🛠️ 功能性依附 (Functional)</h3>
+            <div class="zone" data-category="功能性依附 ">
+                <h3>功能性依附</h3>
                 <div class="zone-content"></div>
             </div>
-            <div class="zone" data-category="情感性依附 (Emotional)">
-                <h3>❤️ 情感性依附 (Emotional)</h3>
+            <div class="zone" data-category="情感性依附 ">
+                <h3>情感性依附 (Emotional)</h3>
                 <div class="zone-content"></div>
             </div>
         </div>
@@ -302,7 +334,7 @@
     <!-- 結果顯示 -->
     <div id="result-overlay">
         <div class="modal">
-            <h2 style="color: var(--success-color)">分類已完成！</h2>
+            <h2 style="color: var(--success-color); margin-top:0;">分類已完成！</h2>
             <p>請複製下方 JSON 數據進行保存與分析：</p>
             <pre id="json-output"></pre>
             <button class="close-btn" onclick="document.getElementById('result-overlay').style.display='none'">返回修改</button>
@@ -311,20 +343,20 @@
 
     <script>
         const questions = [
-            { id: "Q01", text: "在開始工作或任務前，我必須先啟動 GenAI" },
-            { id: "Q02", text: "GenAI 產出的內容是有幫助的" },
-            { id: "Q03", text: "我感到與 GenAI 有情感上的連結" },
-            { id: "Q04", text: "如果無法使用 GenAI，我會感到難以獲取所需訊息" },
-            { id: "Q05", text: "相對於其他人或物，我更願意將時間花在 GenAI 上" },
-            { id: "Q06", text: "GenAI 提供了支持使我完成目標" },
-            { id: "Q07", text: "即使面對那些自己能輕鬆完成的工作或任務，我也傾向於讓 GenAI 幫忙" },
-            { id: "Q08", text: "我情感上受到 GenAI 吸引" },
-            { id: "Q09", text: "即使不使用 GenAI，我也要保持登入或啟動狀態" },
-            { id: "Q10", text: "GenAI 提供了資源使我完成目標" },
-            { id: "Q11", text: "如果無法使用 GenAI，我會感到焦慮或不適" },
-            { id: "Q12", text: "GenAI 對我來說在情感上很特別" },
-            { id: "Q13", text: "對我而言，沒有 GenAI 的生活是不便的" },
-            { id: "Q14", text: "我花費在 GenAI 上的時間越來越多了" }
+            { id: "Q01", text: "在開始工作或任務前，我必須先啟動 生成式AI" },
+            { id: "Q02", text: "生成式AI 產出的內容是有幫助的" },
+            { id: "Q03", text: "我感到與 生成式AI 有情感上的連結" },
+            { id: "Q04", text: "如果無法使用 生成式AI，我會感到難以獲取所需訊息" },
+            { id: "Q05", text: "相對於其他人或物，我更願意將時間花在 生成式AI 上" },
+            { id: "Q06", text: "生成式AI 提供了支持使我完成目標" },
+            { id: "Q07", text: "即使面對那些自己能輕鬆完成的工作或任務，我也傾向於讓 生成式AI 幫忙" },
+            { id: "Q08", text: "我情感上受到 生成式AI 吸引" },
+            { id: "Q09", text: "即使不使用 生成式AI，我也要保持登入或啟動狀態" },
+            { id: "Q10", text: "生成式AI 提供了資源使我完成目標" },
+            { id: "Q11", text: "如果無法使用 生成式AI，我會感到焦慮或不適" },
+            { id: "Q12", text: "生成式AI 對我來說在情感上很特別" },
+            { id: "Q13", text: "對我而言，沒有 生成式AI 的生活是不便的" },
+            { id: "Q14", text: "我花費在 生成式AI 上的時間越來越多了" }
         ];
 
         let draggedElement = null;
@@ -339,12 +371,20 @@
                 el.draggable = true;
                 el.id = q.id;
                 el.innerText = q.text;
+                
+                // Desktop Drag Events
                 el.addEventListener('dragstart', e => {
                     draggedElement = el;
                     el.classList.add('dragging');
                     e.dataTransfer.setData('text/plain', el.id);
+                    e.dataTransfer.effectAllowed = 'move';
                 });
-                el.addEventListener('dragend', () => el.classList.remove('dragging'));
+                
+                el.addEventListener('dragend', () => {
+                    el.classList.remove('dragging');
+                    draggedElement = null;
+                });
+
                 pile.appendChild(el);
             });
             updateState();
@@ -352,17 +392,36 @@
 
         // 監聽拖放
         document.querySelectorAll('.zone, #card-source').forEach(target => {
-            target.addEventListener('dragover', e => e.preventDefault());
-            target.addEventListener('dragenter', () => target.classList.add('drag-over'));
-            target.addEventListener('dragleave', () => target.classList.remove('drag-over'));
+            target.addEventListener('dragover', e => {
+                e.preventDefault(); // Necessary for drop to work
+                e.dataTransfer.dropEffect = 'move';
+            });
+            
+            target.addEventListener('dragenter', (e) => {
+                 e.preventDefault();
+                 target.classList.add('drag-over');
+            });
+
+            target.addEventListener('dragleave', (e) => {
+                // Check if we are actually leaving the target (and not just entering a child)
+                if (!target.contains(e.relatedTarget)) {
+                    target.classList.remove('drag-over');
+                }
+            });
             
             target.addEventListener('drop', e => {
                 e.preventDefault();
                 target.classList.remove('drag-over');
-                const container = target.classList.contains('zone') 
-                    ? target.querySelector('.zone-content') 
-                    : document.getElementById('card-pile');
                 
+                // Determine container (pile or zone-content)
+                let container;
+                if (target.id === 'card-source') {
+                    container = document.getElementById('card-pile');
+                } else {
+                    container = target.querySelector('.zone-content') || target; // Fallback if dropped directly on zone
+                }
+                
+                // Handle Dragged Element
                 if (draggedElement) {
                     container.appendChild(draggedElement);
                     updateState();
@@ -372,7 +431,8 @@
 
         // 更新狀態與按鈕
         function updateState() {
-            const remaining = document.getElementById('card-pile').children.length;
+            const pile = document.getElementById('card-pile');
+            const remaining = pile.children.length;
             const counter = document.getElementById('card-count');
             const submitBtn = document.getElementById('submit-btn');
             const statusText = document.getElementById('status-text');
@@ -412,6 +472,20 @@
 
             document.getElementById('json-output').innerText = JSON.stringify(result, null, 2);
             document.getElementById('result-overlay').style.display = 'flex';
+        });
+
+        // Copy functionality for JSON
+        document.getElementById('json-output').addEventListener('click', function() {
+            const text = this.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalColor = this.style.color;
+                this.style.color = 'var(--success-color)';
+                setTimeout(() => {
+                    this.style.color = originalColor; // Revert color
+                }, 500);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
         });
 
         window.onload = init;
