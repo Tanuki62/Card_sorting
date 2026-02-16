@@ -3,492 +3,517 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>生成式AI 量表分類測試</title>
+    <title>大六壬宗師排盤 3.5.2</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: rgba(255, 255, 255, 0.08);
-            --primary-glow: #38bdf8;
-            --secondary-glow: #818cf8;
-            --text-color: #f1f5f9;
-            --success-color: #22c55e;
-            --warning-color: #f43f5e;
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --accent: #d4af37;
+            --highlight: #ff4d4d;
+            --heaven: #f1c40f;
+            --earth: #3498db;
+            --border: #333;
         }
 
         body {
-            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(129, 140, 248, 0.05) 0%, transparent 20%);
-            color: var(--text-color);
+            color: var(--text-main);
+            font-family: "Microsoft JhengHei", "Noto Sans TC", sans-serif;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 30px 20px;
-            box-sizing: border-box; /* Ensure padding doesn't affect width */
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-size: 2.2rem;
-            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
-            margin: 0;
-        }
-
-        .instruction {
-            margin-top: 10px;
-            color: #94a3b8;
-            font-size: 1rem;
-            max-width: 700px;
-            line-height: 1.5;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 25px;
-            width: 100%;
-            max-width: 1300px;
-        }
-
-        /* Responsive adjustment for smaller screens */
-        @media (max-width: 850px) {
-            .container {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
-            }
-            #card-source {
-                height: 300px !important;
-                position: relative !important;
-                top: 0 !important;
-            }
-        }
-
-        /* 左側：卡片源區域 */
-        #card-source {
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
             padding: 20px;
-            height: 75vh;
             display: flex;
             flex-direction: column;
-            position: sticky;
-            top: 20px;
-        }
-
-        .source-header {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        #card-count {
-            background: var(--warning-color);
-            color: white;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            transition: all 0.3s;
-        }
-
-        #card-pile {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-right: 5px;
-        }
-
-        /* 滾動條樣式 */
-        #card-pile::-webkit-scrollbar { width: 5px; }
-        #card-pile::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
-
-        /* 卡片樣式 */
-        .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 14px;
+        .container { width: 100%; max-width: 800px; }
+        
+        h1 { color: var(--accent); text-align: center; border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.5rem; letter-spacing: 2px; }
+        
+        /* 控制面板 */
+        .control-panel {
+            background: var(--panel-bg);
+            padding: 20px;
             border-radius: 10px;
-            cursor: grab;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        .card:hover {
-            border-color: var(--primary-glow);
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
-        }
-
-        .card.dragging {
-            opacity: 0.3;
-            transform: scale(0.95);
-            cursor: grabbing;
-        }
-
-        /* 右側：分類目標 */
-        .drop-zones {
+            border: 1px solid var(--border);
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             gap: 20px;
-        }
-
-        .zone {
-            background: rgba(255, 255, 255, 0.02);
-            border: 2px dashed rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            min-height: 120px;
-            transition: all 0.3s;
-        }
-
-        .zone h3 {
-            margin: 0 0 15px 0;
-            color: var(--primary-glow);
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .zone.drag-over {
-            background: rgba(56, 189, 248, 0.05);
-            border-color: var(--primary-glow);
-            border-style: solid;
-        }
-
-        .zone-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 10px;
-            min-height: 50px;
-        }
-
-        .zone-content .card {
-            font-size: 0.85rem;
-            background: rgba(56, 189, 248, 0.1);
-            border-color: rgba(56, 189, 248, 0.3);
-            transform: none; /* Reset hover transform in grid */
-        }
-        
-        .zone-content .card:hover {
-             transform: translateY(-2px);
-        }
-
-        /* 操作區 */
-        .actions {
-            margin-top: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .btn {
-            padding: 15px 50px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        #submit-btn {
-            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
-            color: #0f172a;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        #submit-btn:disabled {
-            background: #334155;
-            color: #64748b;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none;
-        }
-
-        #submit-btn:not(:disabled):hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px var(--primary-glow);
-        }
-
-        .status-msg {
-            font-size: 0.9rem;
-            color: var(--warning-color);
-        }
-
-        /* 結果彈窗 */
-        #result-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            display: none;
             justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 20px;
-            backdrop-filter: blur(5px);
+            align-items: flex-start;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        .modal {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 600px;
-            width: 100%;
-            border: 1px solid var(--primary-glow);
-            box-shadow: 0 0 50px rgba(56, 189, 248, 0.2);
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-size: 0.9rem; color: #aaa; }
+        input[type="datetime-local"], select {
+            background: #2c2c2c; color: #fff; border: 1px solid #555;
+            padding: 8px; border-radius: 4px; font-size: 1rem;
         }
 
-        pre {
-            background: #0f172a;
-            padding: 15px;
-            border-radius: 10px;
-            color: var(--primary-glow);
-            font-size: 0.85rem;
-            overflow-x: auto;
-            max-height: 300px;
-            white-space: pre-wrap;       /* css-3 */
-            white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
-            white-space: -pre-wrap;      /* Opera 4-6 */
-            white-space: -o-pre-wrap;    /* Opera 7 */
-            word-wrap: break-word;       /* Internet Explorer 5.5+ */
-        }
+        /* 月將專屬控制 */
+        .yj-control { border: 1px solid #444; padding: 10px; border-radius: 6px; background: #252525; }
+        .yj-toggle { font-size: 0.8rem; display: flex; align-items: center; gap: 5px; margin-bottom: 5px; cursor: pointer; }
+        .yj-desc { font-size: 0.7rem; color: #777; margin-top: 3px; }
 
-        .close-btn {
-            width: 100%;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            margin-top: 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
+        button {
+            background: var(--accent); color: #000; border: none;
+            padding: 10px 30px; border-radius: 4px; font-weight: bold;
+            font-size: 1.1rem; cursor: pointer; transition: 0.2s;
+            margin-top: 15px; width: 100%;
         }
-        
-        .close-btn:hover {
-            background: rgba(255,255,255,0.2);
+        button:hover { background: #fff; }
+
+        /* 資訊列 */
+        .info-bar {
+            background: #2a0a0a; border: 1px solid var(--highlight);
+            border-radius: 8px; padding: 15px; margin-bottom: 20px;
+            display: none; justify-content: space-around; text-align: center;
         }
+        .info-item .label { font-size: 0.8rem; color: #aaa; display: block; margin-bottom: 5px; }
+        .info-item .val { font-size: 1.2rem; font-weight: bold; color: var(--heaven); }
+
+        /* Grid */
+        .grid-wrapper { position: relative; width: 100%; max-width: 400px; margin: 0 auto 30px; display: none; }
+        .grid-board {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; aspect-ratio: 1/1;
+            background: #222; padding: 5px; border-radius: 10px; border: 2px solid #444;
+        }
+        .cell {
+            background: #333; border-radius: 5px; position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid #444;
+        }
+        .cell.empty { visibility: hidden; }
+        .cell-gen { font-size: 0.8rem; color: var(--accent); margin-bottom: 2px; }
+        .cell-h { font-size: 1.4rem; font-weight: bold; color: var(--heaven); }
+        .cell-e { position: absolute; bottom: 2px; right: 4px; font-size: 0.8rem; color: var(--earth); opacity: 0.8; }
+        .center-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #555; font-size: 1.5rem; font-weight: bold; pointer-events: none; opacity: 0.3; }
+
+        /* 四課 */
+        .section-title { color: var(--accent); border-left: 4px solid var(--accent); padding-left: 10px; margin-bottom: 10px; font-size: 1.1rem; margin-top: 10px;}
+        .sike-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; direction: rtl; margin-bottom: 25px; }
+        .ke-box { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .ke-rel { font-size: 0.8rem; margin-top: 5px; padding: 2px 6px; border-radius: 4px; background: #333; color: #aaa; }
+        .ke-rel.zei { color: #fff; background: var(--highlight); } 
+        .ke-rel.ke { color: var(--highlight); border: 1px solid var(--highlight); }
+
+        /* 三傳 */
+        .sanchuan-container { display: flex; justify-content: space-around; gap: 10px; margin-bottom: 25px; }
+        .chuan-box { flex: 1; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 15px; text-align: center; position: relative; overflow: hidden; }
+        .chuan-box::before { content:''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--accent); }
+        .chuan-label { font-size: 0.8rem; color: #888; margin-bottom: 5px; display: block; }
+        .chuan-val { font-size: 1.8rem; font-weight: bold; color: var(--heaven); }
+        .chuan-gen { font-size: 0.9rem; color: var(--accent); margin-top: 5px; }
+
+        /* 複製區 */
+        .copy-area { width: 100%; box-sizing: border-box; background: #000; color: #0f0; border: 1px solid #444; padding: 15px; font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical; margin-bottom: 10px; }
+        .copy-btn { width: 100%; background: #2563eb; color: #fff; padding: 12px; border:none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .copy-btn:hover { background: #1d4ed8; }
+
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>生成式AI 量表分類測試</h1>
-        <p class="instruction">
-            請將左側<b>所有的卡片</b>拖入右側三個分類之一。
-            <br>為了確保研究準確性，請依據您的第一直覺歸類。
-        </p>
-    </header>
+<div class="container">
+    <h1>大六壬宗師排盤 V3.5 (修復版)</h1>
 
-    <div class="container">
-        <!-- 待分類區域 -->
-        <div id="card-source">
-            <div class="source-header">
-                <h3>待分類題項</h3>
-                <span id="card-count">14 張待處理</span>
-            </div>
-            <div id="card-pile"></div>
+    <div class="control-panel">
+        <div class="input-group">
+            <label>占卜時間</label>
+            <input type="datetime-local" id="dateInput" onchange="autoUpdateYueJiang()">
         </div>
 
-        <!-- 目標區域 -->
-        <div class="drop-zones">
-            <div class="zone" data-category="生成式AI依賴 (Dependence)">
-                <h3>依賴</h3>
-                <div class="zone-content"></div>
+        <div class="yj-control">
+            <div class="input-group">
+                <label>月將 (Yue Jiang)</label>
+                <select id="yueJiangSelect" disabled></select>
             </div>
-            <div class="zone" data-category="功能性依附 ">
-                <h3>功能性依附</h3>
-                <div class="zone-content"></div>
-            </div>
-            <div class="zone" data-category="情感性依附 ">
-                <h3>情感性依附 (Emotional)</h3>
-                <div class="zone-content"></div>
-            </div>
+            <label class="yj-toggle">
+                <input type="checkbox" id="manualYJ" onchange="toggleYueJiangMode()">
+                啟用手動選擇
+            </label>
+            <div class="yj-desc" id="yjDesc">目前：自動匹配 (防呆模式)</div>
         </div>
+
+        <button onclick="safeRun()">起課推演</button>
     </div>
 
-    <div class="actions">
-        <div id="status-text" class="status-msg">請完成所有卡片的分類以提交結果</div>
-        <button id="submit-btn" class="btn" disabled>完成分類並導出數據</button>
+    <div class="info-bar" id="infoBar">
+        <div class="info-item"><span class="label">月將</span><span class="val" id="dispYJ">-</span></div>
+        <div class="info-item"><span class="label">占時</span><span class="val" id="dispTime">-</span></div>
+        <div class="info-item"><span class="label">日柱</span><span class="val" id="dispDay">-</span></div>
+        <div class="info-item"><span class="label">格局</span><span class="val" id="dispMeta">-</span></div>
     </div>
 
-    <!-- 結果顯示 -->
-    <div id="result-overlay">
-        <div class="modal">
-            <h2 style="color: var(--success-color); margin-top:0;">分類已完成！</h2>
-            <p>請複製下方 JSON 數據進行保存與分析：</p>
-            <pre id="json-output"></pre>
-            <button class="close-btn" onclick="document.getElementById('result-overlay').style.display='none'">返回修改</button>
-        </div>
+    <div class="grid-wrapper" id="gridWrapper">
+        <div class="grid-board" id="earthBoard"></div>
+        <div class="center-label">天地盤</div>
     </div>
 
-    <script>
-        const questions = [
-            { id: "Q01", text: "在開始工作或任務前，我必須先啟動 生成式AI" },
-            { id: "Q02", text: "生成式AI 產出的內容是有幫助的" },
-            { id: "Q03", text: "我感到與 生成式AI 有情感上的連結" },
-            { id: "Q04", text: "如果無法使用 生成式AI，我會感到難以獲取所需訊息" },
-            { id: "Q05", text: "相對於其他人或物，我更願意將時間花在 生成式AI 上" },
-            { id: "Q06", text: "生成式AI 提供了支持使我完成目標" },
-            { id: "Q07", text: "即使面對那些自己能輕鬆完成的工作或任務，我也傾向於讓 生成式AI 幫忙" },
-            { id: "Q08", text: "我情感上受到 生成式AI 吸引" },
-            { id: "Q09", text: "即使不使用 生成式AI，我也要保持登入或啟動狀態" },
-            { id: "Q10", text: "生成式AI 提供了資源使我完成目標" },
-            { id: "Q11", text: "如果無法使用 生成式AI，我會感到焦慮或不適" },
-            { id: "Q12", text: "生成式AI 對我來說在情感上很特別" },
-            { id: "Q13", text: "對我而言，沒有 生成式AI 的生活是不便的" },
-            { id: "Q14", text: "我花費在 生成式AI 上的時間越來越多了" }
-        ];
+    <div id="sikeSection" style="display:none;">
+        <div class="section-title">四課 (辛寄戌 V3.1)</div>
+        <div class="sike-container" id="sikeDisplay"></div>
+    </div>
 
-        let draggedElement = null;
+    <div id="sanchuanSection" style="display:none;">
+        <div class="section-title">三傳 (九宗門自動判定)</div>
+        <div class="sanchuan-container" id="sanchuanDisplay"></div>
+    </div>
 
-        // 初始化
-        function init() {
-            const pile = document.getElementById('card-pile');
-            // 隨機洗牌
-            [...questions].sort(() => Math.random() - 0.5).forEach(q => {
-                const el = document.createElement('div');
-                el.className = 'card';
-                el.draggable = true;
-                el.id = q.id;
-                el.innerText = q.text;
-                
-                // Desktop Drag Events
-                el.addEventListener('dragstart', e => {
-                    draggedElement = el;
-                    el.classList.add('dragging');
-                    e.dataTransfer.setData('text/plain', el.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-                
-                el.addEventListener('dragend', () => {
-                    el.classList.remove('dragging');
-                    draggedElement = null;
-                });
+    <div id="copySection" style="display:none;">
+        <div class="section-title">傳輸給宗師</div>
+        <textarea id="copyText" class="copy-area" rows="8" readonly></textarea>
+        <button class="copy-btn" onclick="copyToClip()">複製並貼上</button>
+    </div>
+</div>
 
-                pile.appendChild(el);
+<script>
+    // === 1. 核心資料 ===
+    const GAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+    const ZHI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+    const WUXING = {"甲":"木","乙":"木","丙":"火","丁":"火","戊":"土","己":"土","庚":"金","辛":"金","壬":"水","癸":"水","寅":"木","卯":"木","巳":"火","午":"火","申":"金","酉":"金","亥":"水","子":"水","辰":"土","戌":"土","丑":"土","未":"土"};
+    const JIGONG = {"甲":"寅", "乙":"辰", "丙":"巳", "丁":"未", "戊":"巳", "己":"未", "庚":"申", "辛":"戌", "壬":"亥", "癸":"丑"};
+    const GENERALS = ["貴", "蛇", "朱", "六", "勾", "青", "空", "虎", "常", "玄", "陰", "后"];
+    const GRID_MAP = ["巳", "午", "未", "申", "辰", null, null, "酉", "卯", null, null, "戌", "寅", "丑", "子", "亥"];
+
+    // 2025年節氣表 (概略值)
+    const SOLAR_TERMS_REF = [
+        [1, 20, "子"], [2, 18, "亥"], [3, 20, "戌"], [4, 20, "酉"],
+        [5, 21, "申"], [6, 21, "未"], [7, 22, "午"], [8, 23, "巳"],
+        [9, 23, "辰"], [10, 23, "卯"], [11, 22, "寅"], [12, 21, "丑"]
+    ];
+
+    // 刑對照表 (用於三傳)
+    const PUNISH_MAP = {
+        "子":"卯", "卯":"子",
+        "寅":"巳", "巳":"申", "申":"寅",
+        "丑":"戌", "戌":"未", "未":"丑",
+        "辰":"辰", "午":"午", "酉":"酉", "亥":"亥"
+    };
+
+    // 六沖對照表 (新增)
+    const OPPOSITION_MAP = {
+        "子":"午", "午":"子", "丑":"未", "未":"丑", "寅":"申", "申":"寅",
+        "卯":"酉", "酉":"卯", "辰":"戌", "戌":"辰", "巳":"亥", "亥":"巳"
+    };
+
+    // === 2. 初始化 ===
+    window.onload = function() {
+        try {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const iso = (new Date(now - offset)).toISOString().slice(0, 16);
+            document.getElementById('dateInput').value = iso;
+
+            const sel = document.getElementById('yueJiangSelect');
+            sel.innerHTML = "";
+            ZHI.forEach(z => {
+                let op = document.createElement('option');
+                op.value = z; op.text = z; sel.add(op);
             });
-            updateState();
+
+            autoUpdateYueJiang(); 
+        } catch(e) {
+            console.error("Init Error:", e);
         }
+    };
 
-        // 監聽拖放
-        document.querySelectorAll('.zone, #card-source').forEach(target => {
-            target.addEventListener('dragover', e => {
-                e.preventDefault(); // Necessary for drop to work
-                e.dataTransfer.dropEffect = 'move';
-            });
-            
-            target.addEventListener('dragenter', (e) => {
-                 e.preventDefault();
-                 target.classList.add('drag-over');
-            });
+    // === 3. 功能邏輯 ===
 
-            target.addEventListener('dragleave', (e) => {
-                // Check if we are actually leaving the target (and not just entering a child)
-                if (!target.contains(e.relatedTarget)) {
-                    target.classList.remove('drag-over');
-                }
-            });
+    function autoUpdateYueJiang() {
+        if(document.getElementById('manualYJ').checked) return;
+        
+        try {
+            const val = document.getElementById('dateInput').value;
+            if(!val) return;
+            const d = new Date(val);
+            if(isNaN(d.getTime())) return;
+
+            const m = d.getMonth() + 1;
+            const day = d.getDate();
             
-            target.addEventListener('drop', e => {
-                e.preventDefault();
-                target.classList.remove('drag-over');
-                
-                // Determine container (pile or zone-content)
-                let container;
-                if (target.id === 'card-source') {
-                    container = document.getElementById('card-pile');
-                } else {
-                    container = target.querySelector('.zone-content') || target; // Fallback if dropped directly on zone
+            let yj = "丑";
+            for(let t of SOLAR_TERMS_REF) {
+                if(m > t[0] || (m === t[0] && day >= t[1])) {
+                    yj = t[2];
                 }
-                
-                // Handle Dragged Element
-                if (draggedElement) {
-                    container.appendChild(draggedElement);
-                    updateState();
-                }
-            });
+            }
+            if(m === 1 && day < 20) yj = "丑"; 
+
+            document.getElementById('yueJiangSelect').value = yj;
+        } catch(e) {
+            console.error("YJ Error:", e);
+        }
+    }
+
+    function toggleYueJiangMode() {
+        const isManual = document.getElementById('manualYJ').checked;
+        const sel = document.getElementById('yueJiangSelect');
+        const desc = document.getElementById('yjDesc');
+        sel.disabled = !isManual;
+        if(isManual) {
+            desc.innerText = "手動模式";
+            sel.style.border = "1px solid var(--accent)";
+        } else {
+            desc.innerText = "自動模式";
+            sel.style.border = "1px solid #555";
+            autoUpdateYueJiang();
+        }
+    }
+
+    function getDayGanZhi(date) {
+        const baseDate = new Date(2000, 0, 1);
+        const dayMs = 86400000;
+        const d1 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+        const d2 = Date.UTC(2000, 0, 1);
+        const diff = Math.floor((d1 - d2) / dayMs);
+        
+        let offset = (54 + diff) % 60;
+        if(offset < 0) offset += 60;
+        
+        return { g: GAN[offset%10], z: ZHI[offset%12], txt: GAN[offset%10]+ZHI[offset%12] };
+    }
+
+    function getRel(top, bot) {
+        let t = WUXING[top], b = WUXING[bot];
+        if (t === b) return "比";
+        const seq = ["木", "火", "土", "金", "水"];
+        let ti = seq.indexOf(t), bi = seq.indexOf(b);
+        if ((ti+2)%5 === bi) return "剋";
+        if ((bi+2)%5 === ti) return "賊";
+        if ((ti+1)%5 === bi) return "生"; 
+        if ((bi+1)%5 === ti) return "生"; 
+        return "無";
+    }
+
+    // 獲取驛馬 (新增)
+    function GET_HORSE(dayZhi) {
+        // 申子辰馬在寅, 亥卯未馬在巳, 巳酉丑馬在亥, 寅午戌馬在申
+        if(["申","子","辰"].includes(dayZhi)) return "寅";
+        if(["亥","卯","未"].includes(dayZhi)) return "巳";
+        if(["巳","酉","丑"].includes(dayZhi)) return "亥";
+        if(["寅","午","戌"].includes(dayZhi)) return "申";
+        return "寅"; // default
+    }
+
+    // === 4. 執行起課 ===
+    function safeRun() {
+        try {
+            runDivination();
+        } catch(e) {
+            alert("運算發生錯誤：\n" + e.message + "\n請檢查時間輸入。");
+            console.error(e);
+        }
+    }
+
+    function runDivination() {
+        const dateVal = document.getElementById('dateInput').value;
+        if(!dateVal) throw new Error("請選擇有效的日期時間");
+        const date = new Date(dateVal);
+        const h = date.getHours();
+
+        // A. 基礎參數
+        const day = getDayGanZhi(date);
+        const yj = document.getElementById('yueJiangSelect').value;
+        const tIdx = Math.floor((h + 1) / 2) % 12; 
+        const zTime = ZHI[tIdx];
+
+        // B. 晝夜 (V3.1: 卯(3)~申(8)=晝, 酉(9)~寅(2)=夜)
+        const isNight = (tIdx >= 9 || tIdx <= 2);
+
+        // C. 天地盤
+        const yIdx = ZHI.indexOf(yj);
+        const shift = (yIdx - tIdx + 12) % 12;
+        const TP = {};
+        ZHI.forEach((z, i) => TP[z] = ZHI[(i + shift) % 12]);
+
+        // D. 神煞
+        const guiMap = {"甲":0,"戊":0,"庚":0, "乙":1,"己":1, "丙":2,"丁":2, "壬":3,"癸":3, "辛":4};
+        const guiVal = [["丑","未"], ["子","申"], ["亥","酉"], ["巳","卯"], ["午","寅"]]; // [晝, 夜]
+        
+        if(guiMap[day.g] === undefined) throw new Error("日干計算錯誤");
+        
+        const noble = isNight ? guiVal[guiMap[day.g]][1] : guiVal[guiMap[day.g]][0];
+        
+        let noblePos = "";
+        for(let z in TP) if(TP[z] === noble) noblePos = z;
+        const nIdx = ZHI.indexOf(noblePos);
+        const isShun = (nIdx >= 11 || nIdx <= 4); 
+
+        const gensTP = {};
+        const nTpIdx = ZHI.indexOf(noble);
+        GENERALS.forEach((g, i) => {
+            let idx = isShun ? (nTpIdx + i)%12 : (nTpIdx - i + 12)%12;
+            gensTP[ZHI[idx]] = g;
         });
 
-        // 更新狀態與按鈕
-        function updateState() {
-            const pile = document.getElementById('card-pile');
-            const remaining = pile.children.length;
-            const counter = document.getElementById('card-count');
-            const submitBtn = document.getElementById('submit-btn');
-            const statusText = document.getElementById('status-text');
+        // E. 四課
+        const k1e = JIGONG[day.g], k1h = TP[k1e];
+        const k2e = k1h, k2h = TP[k2e];
+        const k3e = day.z, k3h = TP[k3e];
+        const k4e = k3h, k4h = TP[k4e];
+        
+        const siKe = [
+            {h:k1h, e:k1e, rel:getRel(k1h, day.g)},
+            {h:k2h, e:k2e, rel:getRel(k2h, k2e)},
+            {h:k3h, e:k3e, rel:getRel(k3h, k3e)},
+            {h:k4h, e:k4e, rel:getRel(k4h, k4e)}
+        ];
 
-            counter.innerText = remaining > 0 ? `${remaining} 張待處理` : "已全部歸類";
-            counter.style.background = remaining > 0 ? "var(--warning-color)" : "var(--success-color)";
+        // F. 三傳 (修正核心)
+        let chu = "", zhong = "", mo = "", method = "";
+        let zeis = siKe.filter(k => k.rel === "賊");
+        let kes = siKe.filter(k => k.rel === "剋");
+        
+        const isYangDay = ["甲","丙","戊","庚","壬"].includes(day.g);
 
-            if (remaining === 0) {
-                submitBtn.disabled = false;
-                statusText.innerText = "驗證完畢，可以提交結果";
-                statusText.style.color = "var(--success-color)";
+        if(zeis.length > 0) {
+            // 下賊上
+            const yangZhis = ["子","寅","辰","午","申","戌"];
+            let match = zeis.filter(k => yangZhis.includes(k.h) === isYangDay);
+            
+            if(match.length === 1) {
+                chu = match[0].h; method = "比用(下賊上)";
+            } else if(match.length > 1) {
+                chu = match[0].h; method = "涉害(下賊上)"; 
             } else {
-                submitBtn.disabled = true;
-                statusText.innerText = `尚有 ${remaining} 張卡片未分類`;
-                statusText.style.color = "var(--warning-color)";
+                chu = zeis[0].h; method = "重審(下賊上)";
+            }
+            zhong = TP[chu]; mo = TP[zhong];
+
+        } else if(kes.length > 0) {
+            // 上剋下
+            const yangZhis = ["子","寅","辰","午","申","戌"];
+            let match = kes.filter(k => yangZhis.includes(k.h) === isYangDay);
+
+            if(match.length === 1) {
+                chu = match[0].h; method = "比用(上剋下)";
+            } else if(match.length > 1) {
+                chu = match[0].h; method = "涉害(上剋下)";
+            } else {
+                chu = kes[0].h; method = "元首(上剋下)";
+            }
+            zhong = TP[chu]; mo = TP[zhong];
+
+        } else {
+            // 無賊無剋
+            if (shift === 0) { 
+                // 伏吟
+                method = "伏吟";
+                const isSelfPunish = (zhi) => PUNISH_MAP[zhi] === zhi;
+                
+                // 1. 初傳：陽日取干上(k1h)，陰日取支上(k3h)
+                chu = isYangDay ? siKe[0].h : siKe[2].h;
+                
+                // 2. 判斷杜傳
+                if (isSelfPunish(chu)) {
+                    method += " (杜傳)";
+                    // 陽日初傳用干，遇自刑，中傳改取支上(k3h)；陰日反之
+                    zhong = isYangDay ? siKe[2].h : siKe[0].h;
+                    
+                    if (isSelfPunish(zhong)) {
+                        mo = OPPOSITION_MAP[zhong]; // 取中傳之六沖
+                    } else {
+                        mo = PUNISH_MAP[zhong]; // 取刑
+                    }
+                } else {
+                    // 非杜傳，常規伏吟取刑
+                    zhong = PUNISH_MAP[chu];
+                    // 互刑檢查
+                    if (PUNISH_MAP[zhong] === chu) {
+                        mo = OPPOSITION_MAP[zhong];
+                    } else {
+                        mo = PUNISH_MAP[zhong];
+                    }
+                }
+
+            } else if (shift === 6) {
+                // 返吟
+                method = "返吟 (無親/井欄射)";
+                let ma = GET_HORSE(day.z); 
+                chu = ma;
+                zhong = siKe[2].h; // 支上 (Lesson 3)
+                mo = siKe[0].h;    // 干上 (Lesson 1)
+            } else {
+                // 遙克 / 昴星 / 別責 / 八專 (Fallback)
+                method = "遙克/昴星/別責 (需進一步判斷)";
+                chu = "需查"; zhong = "-"; mo = "-";
             }
         }
 
-        // 提交
-        document.getElementById('submit-btn').addEventListener('click', () => {
-            const result = {
-                metadata: {
-                    test_time: new Date().toLocaleString(),
-                    total_cards: questions.length
-                },
-                sorting: {}
-            };
+        // G. 渲染 UI
+        document.getElementById('dispYJ').innerText = yj;
+        document.getElementById('dispTime').innerText = zTime;
+        document.getElementById('dispDay').innerText = day.txt;
+        document.getElementById('dispMeta').innerText = method;
+        document.getElementById('infoBar').style.display = 'flex';
 
-            document.querySelectorAll('.zone').forEach(zone => {
-                const cat = zone.getAttribute('data-category');
-                const cards = Array.from(zone.querySelectorAll('.card')).map(c => ({
-                    id: c.id,
-                    text: c.innerText
-                }));
-                result.sorting[cat] = cards;
-            });
-
-            document.getElementById('json-output').innerText = JSON.stringify(result, null, 2);
-            document.getElementById('result-overlay').style.display = 'flex';
+        // Grid
+        const board = document.getElementById('earthBoard');
+        board.innerHTML = '';
+        GRID_MAP.forEach(e => {
+            const c = document.createElement('div');
+            c.className = e ? 'cell' : 'cell empty';
+            if(e) {
+                c.innerHTML = `<div class="cell-gen">${gensTP[TP[e]]}</div><div class="cell-h">${TP[e]}</div><div class="cell-e">${e}</div>`;
+            }
+            board.appendChild(c);
         });
+        document.getElementById('gridWrapper').style.display = 'block';
 
-        // Copy functionality for JSON
-        document.getElementById('json-output').addEventListener('click', function() {
-            const text = this.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const originalColor = this.style.color;
-                this.style.color = 'var(--success-color)';
-                setTimeout(() => {
-                    this.style.color = originalColor; // Revert color
-                }, 500);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-            });
-        });
+        // Sike
+        const skDiv = document.getElementById('sikeDisplay');
+        skDiv.innerHTML = siKe.map((k,i) => {
+            let cls = k.rel==="賊"?"zei":(k.rel==="剋"?"ke":"");
+            return `<div class="ke-box"><div style="font-size:0.8rem;color:#888">課${i+1}</div><div class="cell-h">${k.h}</div><div class="cell-e">${i===0?day.g:k.e}</div><div class="ke-rel ${cls}">${k.rel}</div></div>`;
+        }).join('');
+        document.getElementById('sikeSection').style.display = 'block';
 
-        window.onload = init;
-    </script>
+        // Sanchuan
+        const scDiv = document.getElementById('sanchuanDisplay');
+        const arr = [{l:"初",v:chu},{l:"中",v:zhong},{l:"末",v:mo}];
+        
+        let formatG = (v) => (v && v!=="-" && v!=="需查") ? gensTP[v] : "";
+        
+        scDiv.innerHTML = arr.map(x => `<div class="chuan-box"><span class="chuan-label">${x.l}</span><div class="chuan-val">${x.v}</div><div class="chuan-gen">${formatG(x.v)}</div></div>`).join('');
+        document.getElementById('sanchuanSection').style.display = 'block';
+
+        // Copy Text
+        const copyTxt = `
+命主：(請填寫)        
+問事：(請填寫)
+四柱：${day.txt}日 ${zTime}時 (${isNight?'夜':'晝'})
+月將：${yj} (模式:${document.getElementById('manualYJ').checked?'手動':'自動'})
+天地盤：Shift=${shift} | 貴人：${noble} 臨 ${noblePos} (${isShun?'順':'逆'})
+
+【四課】
+1: ${siKe[0].h}/${day.g}(${siKe[0].rel})
+2: ${siKe[1].h}/${siKe[1].e}(${siKe[1].rel})
+3: ${siKe[2].h}/${siKe[2].e}(${siKe[2].rel})
+4: ${siKe[3].h}/${siKe[3].e}(${siKe[3].rel})
+
+【三傳】
+初：${chu} (${formatG(chu)})
+中：${zhong} (${formatG(zhong)})
+末：${mo} (${formatG(mo)})
+(法：${method})
+
+宗師，請斷案。並驗證四課三傳是否正確`;
+
+        document.getElementById('copyText').value = copyTxt;
+        document.getElementById('copySection').style.display = 'block';
+    }
+
+    function copyToClip() {
+        const t = document.getElementById('copyText');
+        t.select();
+        document.execCommand('copy');
+        alert("已複製！");
+    }
+</script>
+
 </body>
 </html>
